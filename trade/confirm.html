@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Review Order{% endblock %}
+
+<!-- Review Order before Placing It -->
+{% block content %}
+  {% set quote = order.quote %}
+  {% set details = order.request %}
+  <div class="narrow mx-auto">
+    <h1 class="h3 mb-3">Review Your Order</h1>
+    <div class="card card-body">
+
+      <!-- Display Stock information & User Information -->
+      <table class="table">
+        <tr><td>Account</td><td class="text-end">{{ portfolio.account_name }} {{ portfolio.masked_account_number }}</td></tr>
+        <tr><td>Stock</td><td class="text-end">{{ quote.stock.company_name }} ({{ quote.stock.symbol }})</td></tr>
+        <tr><td>Action</td><td class="text-end">{{ details.action }}</td></tr>
+        <tr><td>Quantity</td><td class="text-end">{{ order.quantity | shares }} shares</td></tr>
+        <tr><td>Estimated price</td><td class="text-end">{{ quote.stock.current_price | money }}</td></tr>
+        <tr class="fw-bold"><td>Estimated total</td><td class="text-end">{{ order.total | money }}</td></tr>
+        <tr><td>Order type</td><td class="text-end">{{ details.order_type }}, {{ details.timing }}</td></tr>
+      </table>
+      <p class="small text-secondary">
+        The price and total are estimates: the order fills at the price at the moment you place it.
+        {% if details.unit == "Dollars" %}It will never cost more than {{ details.amount | money }}.{% endif %}
+        Placed orders can't be cancelled. {{ market_text }}.
+      </p>
+      <form method="post" action="{{ url_for('trade.confirm') }}" class="text-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <a class="btn btn-outline-secondary" href="{{ url_for('trade.trade_page', portfolio=portfolio.portfolio_id, symbol=quote.stock.symbol) }}">Change order</a>
+        <button class="btn btn-primary">Place order</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

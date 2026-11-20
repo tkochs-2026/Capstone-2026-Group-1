@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Trade{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Trade Ticket</h1>
+
+  {% if not portfolio %}
+    <div class="alert alert-info">
+      You don't have a portfolio yet. <a href="{{ url_for('account.summary') }}">Open one from your Account page</a> first.
+    </div>
+  {% else %}
+
+    <!-- Trade menu Information-->
+    <form method="get" action="{{ url_for('trade.trade_page') }}" class="d-flex align-items-center gap-3 mb-4">
+      <input type="hidden" name="symbol" value="{{ symbol or '' }}">
+      <select class="form-select w-auto" name="portfolio">
+        {% for p in portfolios %}
+          <option value="{{ p.portfolio_id }}" {% if p.portfolio_id == portfolio.portfolio_id %}selected{% endif %}>
+            {{ p.account_name }} {{ p.masked_account_number }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-outline-secondary">Show</button>
+      <span>Available Cash: <b>{{ portfolio.cash_balance | money }}</b></span>
+    </form>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row g-4">
+          
+          <!-- Symbol Lookup -->
+          <div class="col-lg-7">
+            <form method="get" action="{{ url_for('trade.trade_page') }}">
+              <input type="hidden" name="portfolio" value="{{ portfolio.portfolio_id }}">
+              <label class="form-label" for="symbol">Symbol</label>
+              <div class="input-group symbol-input">
+                <input class="form-control text-uppercase" id="symbol" name="symbol" value="{{ symbol or '' }}"
+                       placeholder="Enter Symbol" required>
+                <button class="btn btn-outline-secondary">Look up</button>
+              </div>
+            </form>
+            {% if history %}
+              <p class="small mt-3">Search History:
+                {% for past_symbol in history %}
+                  <a href="{{ url_for('trade.trade_page', portfolio=portfolio.portfolio_id, symbol=past_symbol) }}">{{ past_symbol }}</a>
+                {% endfor %}
+              </p>
+            {% endif %}
+          </div>
+
+          <!-- Stock Information Box (in trade) -->
+          {% if quote %}
+            <div class="col-lg-5">
+              <h2 class="h5">{{ quote.stock.company_name }} ({{ quote.stock.symbol }})
+                <span class="badge {{ 'text-bg-success' if quote.market.is_open else 'text-bg-secondary' }}">{{ market_text }}</span>
+              </h2>
+              <p class="fs-4 fw-bold">{{ quote.stock.current_price | money }}</p>
+              <table class="table table-sm">
+                <tr><td>Change since close</td><td class="text-end">{{ change_text }}</td></tr>
+                <tr><td>Shares owned</td><td class="text-end">{{ quote.shares_owned | shares }}</td></tr>
+                <tr><td>Market value</td><td class="text-end">{{ market_value | money }}</td></tr>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Trade Ticket Action Items -->
+        {% if quote %}
+          <form method="post" action="{{ url_for('trade.preview') }}" class="row g-3 mt-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="portfolio" value="{{ portfolio.portfolio_id }}">
+            <input type="hidden" name="symbol" value="{{ symbol }}">
+            <div class="col-sm-6 col-lg">
+              <label class="form-label" for="action">Action</label>
+              <select class="form-select" id="action" name="action" required>
+                <option value="">Select Action</option>
+                <option>Buy</option>
+                <option {% if not can_sell %}disabled{% endif %}>Sell</option>
+              </select>
+            </div>
+            <div class="col-sm-6 col-lg">
+              <label class="form-label" for="unit">Unit</label>
+              <select class="form-select" id="unit" name="unit">
+                {% for unit in units %}<option>{{ unit }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-6 col-lg">
+              <label class="form-label" for="amount">Amount</label>
+              <input class="form-control" type="number" id="amount" name="amount" min="0.000001" step="any"
+                     placeholder="Insert Amount" required>
+            </div>
+            <div class="col-sm-6 col-lg">
+              <label class="form-label" for="order_type">Order Type</label>
+              <select class="form-select" id="order_type" name="order_type">
+                {% for order_type in order_types %}<option>{{ order_type }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-6 col-lg">
+              <label class="form-label" for="timing">Timing</label>
+              <select class="form-select" id="timing" name="timing">
+                {% for timing in timings %}<option>{{ timing }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-12 text-end">
+              <a class="btn btn-outline-secondary" href="{{ url_for('trade.trade_page', portfolio=portfolio.portfolio_id) }}">Clear</a>
+              <button class="btn btn-primary">Submit</button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Legal Information -->
+  <details class="card card-body">
+    <summary>Legal Information</summary>
+    <p class="small text-secondary mt-2 mb-0">
+      This is a stock trading simulator for a Capstone project. Prices are generated at random and are not
+      real market data. No real money or securities are involved, and nothing here is investment advice.
+    </p>
+  </details>
+{% endblock %}

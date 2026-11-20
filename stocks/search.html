@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Stocks{% endblock %}
+
+<!-- All Stock Menu -->
+{% block content %}
+  <div class="narrow mx-auto">
+    <h1 class="h3 mb-3 text-center">Stock Search</h1>
+
+    <!-- Stock Search Bar -->
+    <form method="get" action="{{ url_for('stocks.search_page') }}" class="input-group mb-2">
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Symbol or company">
+      <button class="btn btn-primary">Search</button>
+    </form>
+    {% if error %}<p class="text-danger">{{ error }}</p>{% endif %}
+
+    <!-- Stock List -->
+    <div class="card mt-4">
+      <h2 class="card-header h6">{% if query %}Results for "{{ query }}"{% else %}All stocks{% endif %}</h2>
+      <ul class="list-group list-group-flush">
+        {% for stock in stocks %}
+          <li class="list-group-item">
+            <a class="d-flex align-items-center gap-2 text-body text-decoration-none"
+               href="{{ url_for('stocks.detail_page', symbol=stock.symbol) }}">
+              <span class="flex-grow-1">
+                <b>{{ stock.symbol }}</b><br>
+                <small class="text-secondary">{{ stock.company_name }}</small>
+              </span>
+              <span class="text-end">
+                {{ stock.current_price | money }}<br>
+                <small>{{ change(stock.change, stock.change_pct) }}</small>
+              </span>
+            </a>
+          </li>
+        {% else %}
+          <li class="list-group-item text-secondary">No stocks found.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endblock %}

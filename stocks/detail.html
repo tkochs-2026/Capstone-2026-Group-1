@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ stock.symbol }}{% endblock %}
+
+
+<!-- Detailed Individual Stock Menu -->
+{% block content %}
+  <div class="narrow mx-auto">
+    
+    <!-- Stock Search Bar -->
+    <h1 class="h3 mb-3 text-center">Stock Search</h1>
+    <form method="get" action="{{ url_for('stocks.search_page') }}" class="input-group mb-4">
+      <input class="form-control" type="search" name="q" placeholder="Symbol or company">
+      <button class="btn btn-primary">Search</button>
+    </form>
+
+    <!-- Stock List Menu-->
+    <a href="{{ url_for('stocks.search_page') }}">‹ All stocks</a>
+    <h2 class="h4 mt-2">{{ stock.company_name }} ({{ stock.symbol }})</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="fs-5"><b>{{ stock.current_price | money }}</b> {{ change(stock.change, stock.change_pct) }}</span>
+      
+      <!-- Stock Menu 'trade' Button-->
+      {% if not current_user.is_admin %}
+        <a class="btn btn-primary" href="{{ url_for('trade.trade_page', symbol=stock.symbol) }}">Trade</a>
+      {% endif %}
+    </div>
+
+    <!-- Stock More Information menu -->
+    <div class="row">
+      <div class="col-sm-6">
+        <table class="table table-sm">
+          <tr><td>Previous Close</td><td class="text-end">{{ stock.previous_close | money }}</td></tr>
+          <tr><td>Open</td><td class="text-end">{{ open_price | money }}</td></tr>
+          {% if stock.exchange %}
+            <tr><td>Exchange</td><td class="text-end">{{ stock.exchange }}</td></tr>
+          {% endif %}
+        </table>
+      </div>
+      <div class="col-sm-6">
+        <h3 class="h6">Stock Description</h3>
+        <p>{{ stock.description or "No description yet." }}</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

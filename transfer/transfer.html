@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Transfer Funds{% endblock %}
+
+{% macro account_menu(field, label) %}
+  <label class="form-label" for="{{ field }}">{{ label }}</label>
+  <select class="form-select" id="{{ field }}" name="{{ field }}" required>
+    <option value="">Choose…</option>
+    {% for bank in banks %}
+      <option value="bank:{{ bank.bank_account_id }}">{{ bank_labels[bank.bank_account_id] }} · {{ bank.bank_name }}</option>
+    {% endfor %}
+    {% for portfolio in portfolios %}
+      <option value="portfolio:{{ portfolio.portfolio_id }}">{{ portfolio_labels[portfolio.portfolio_id] }} · {{ portfolio.cash_balance | money }}</option>
+    {% endfor %}
+  </select>
+{% endmacro %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Transfer Funds</h1>
+
+  {% if not banks %}
+    <div class="alert alert-warning">Link a bank account before transferring funds.</div>
+  {% elif not portfolios %}
+    <div class="alert alert-info">You don't have a portfolio yet. Open one from your Account page first.</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('transfer.submit_transfer') }}" class="card card-body mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-3">{{ account_menu("from_account", "From") }}</div>
+      <div class="col-md-3">{{ account_menu("to_account", "To") }}</div>
+      <div class="col-md-3">
+        <label class="form-label" for="amount">Cash Amount ($)</label>
+        <input class="form-control" type="number" id="amount" name="amount" min="0.01" step="0.01"
+               placeholder="Insert Amount" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="transfer_date">Transfer Date</label>
+        <input class="form-control" type="date" id="transfer_date" value="{{ today.isoformat() }}" disabled>
+      </div>
+    </div>
+    <div class="text-end mt-3">
+      <button type="reset" class="btn btn-outline-secondary">Clear</button>
+      <button class="btn btn-primary">Submit</button>
+    </div>
+  </form>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <h2 class="card-header h5">Bank Accounts</h2>
+        <div class="card-body">
+          {% for bank in banks %}
+            <form method="post" action="{{ url_for('transfer.remove_bank_account', bank_account_id=bank.bank_account_id) }}"
+                  data-confirm="Remove {{ bank.nickname }}? Past transfers will still show it."
+                  class="d-flex justify-content-between align-items-center border-bottom py-2">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <span><b>{{ bank.nickname }}</b> {{ bank.bank_name }} {{ bank.masked_account_number }}</span>
+              <button class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+          {% endfor %}
+
+          <h3 class="h6 mt-3">Add a bank account</h3>
+          <form method="post" action="{{ url_for('transfer.add_bank_account') }}" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-md-6">
+              <label class="form-label" for="bank_name">Bank Name</label>
+              <input class="form-control" id="bank_name" name="bank_name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="account_number">Account Number</label>
+              <input class="form-control" id="account_number" name="account_number" pattern="[0-9]{4,17}" title="4 to 17 digits" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="routing_number">Routing Number</label>
+              <input class="form-control" id="routing_number" name="routing_number" pattern="[0-9]{9}" title="9 digits" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="nickname">Nickname</label>
+              <input class="form-control" id="nickname" name="nickname" required>
+            </div>
+            <div class="col-12 text-end">
+              <button type="reset" class="btn btn-outline-secondary">Clear</button>
+              <button class="btn btn-primary">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <h2 class="card-header h5">Support</h2>
+        <p class="card-body">Questions about a transfer? Contact support at
+          <a href="mailto:{{ support_email }}">{{ support_email }}</a>, {{ support_hours }}.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

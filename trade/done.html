@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Order Filled{% endblock %}
+
+<!-- Placed Order Confirmation Menu -->
+{% block content %}
+  {% set buying = result.action == "Buy" %}
+  <div class="narrow mx-auto">
+    <h1 class="h3 mb-3">Order Filled</h1>
+    <div class="alert alert-success">
+      {{ "Bought" if buying else "Sold" }} {{ result.quantity | shares }} {{ result.symbol }} at {{ result.price | money }}
+      for {{ result.total | money }}.
+    </div>
+    <div class="card card-body">
+      <table class="table">
+        <tr><td>Order number</td><td class="text-end">{{ result.transaction_id }}</td></tr>
+        <tr><td>Account</td><td class="text-end">{{ portfolio.account_name }} {{ portfolio.masked_account_number }}</td></tr>
+        <tr><td>Filled</td><td class="text-end">{{ executed_at.strftime("%m/%d/%Y %I:%M %p") }}</td></tr>
+        <tr><td>Price per share</td><td class="text-end">{{ result.price | money }}</td></tr>
+        <tr class="fw-bold"><td>{{ "Total cost" if buying else "Total proceeds" }}</td><td class="text-end">{{ result.total | money }}</td></tr>
+        <tr><td>Cash balance now</td><td class="text-end">{{ result.cash_balance | money }}</td></tr>
+      </table>
+      <div class="text-end">
+        <a class="btn btn-outline-secondary" href="{{ url_for('trade.trade_page', portfolio=portfolio.portfolio_id, symbol=result.symbol) }}">Trade again</a>
+        <a class="btn btn-primary" href="{{ url_for('account.positions_page', portfolio=portfolio.portfolio_id) }}">View positions</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
