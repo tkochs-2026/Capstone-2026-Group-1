@@ -1,0 +1,14 @@
+# Python virtual environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+
+# Local configuration and secrets
+.env
+.env.bak
+
+# Word lock files (created while a .docx is open)
+~$*
+.DS_Store
