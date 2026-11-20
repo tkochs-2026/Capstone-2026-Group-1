@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+
+{% block content %}
+  {% set totals = summary.totals %}
+  <h1 class="h3 mb-3">Summary</h1>
+
+  <!-- Account Value menu -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5">Total Value</h2>
+      <div class="d-flex flex-wrap gap-4">
+        <div>Total Value<br><b class="fs-5">{{ totals.total_value | money }}</b></div>
+        <div>Day Change<br><b class="fs-5">{{ change(totals.day_change, totals.day_change_pct) }}</b></div>
+        <div>Year to date Change<br><b class="fs-5">{{ change(totals.ytd_change, totals.ytd_change_pct) }}</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio Menu -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between gap-2">
+      <h2 class="h5 mb-0">Portfolios</h2>
+      <div class="d-flex gap-2">
+        {% if summary.rows %}
+          <form method="get" action="{{ url_for('account.summary') }}">
+            <input class="form-control form-control-sm" type="search" name="q" value="{{ query }}" placeholder="Search">
+          </form>
+        {% endif %}
+        <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#create-portfolio">Create Portfolio</button>
+      </div>
+    </div>
+
+    <!-- Create Portfolio -->
+    <div class="collapse {% if open_form %}show{% endif %}" id="create-portfolio">
+      <form method="post" action="{{ url_for('account.create_portfolio') }}" class="card-body border-bottom row g-3 align-items-end m-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-5">
+          <label class="form-label" for="account_name">Account Name</label>
+          <input class="form-control" id="account_name" name="account_name" placeholder="e.g. Retirement" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="account_type">Account Type</label>
+          <select class="form-select" id="account_type" name="account_type">
+            {% for account_type in account_types %}
+              <option>{{ account_type }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100">Create</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- No Portfolio Error Message -->
+    {% if not summary.rows %}
+      <p class="card-body mb-0">You don't have a portfolio yet. Create one above, then add cash from
+        <a href="{{ url_for('transfer.transfer_page') }}">Transfer Funds</a> to start trading.</p>
+    {% else %}
+        <!-- Show Portfolio(s) -->
+      <table class="table table-hover mb-0">
+        <tr>
+          <th>Account Name</th>
+          <th>Type</th>
+          <th class="text-end">Cash</th>
+          <th class="text-end">Account Value</th>
+          <th class="text-end">Day Change</th>
+          <th class="text-end">YTD Change</th>
+        </tr>
+        {% for row in rows %}
+          <tr>
+            <td>
+              <a href="{{ url_for('account.positions_page', portfolio=row.portfolio.portfolio_id) }}">{{ row.portfolio.account_name }}</a>
+              <small class="text-secondary">{{ row.portfolio.masked_account_number }}</small>
+            </td>
+            <td>{{ row.portfolio.account_type }}</td>
+            <td class="text-end">{{ row.totals.cash | money }}</td>
+            <td class="text-end">{{ row.totals.total_value | money }}</td>
+            <td class="text-end">{{ change(row.totals.day_change, row.totals.day_change_pct) }}</td>
+            <td class="text-end">{{ change(row.totals.ytd_change, row.totals.ytd_change_pct) }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No portfolios match "{{ query }}".</td></tr>
+        {% endfor %}
+        <tr class="fw-bold">
+          <td colspan="2">Investments Total</td>
+          <td class="text-end">{{ totals.cash | money }}</td>
+          <td class="text-end">{{ totals.total_value | money }}</td>
+          <td class="text-end">{{ change(totals.day_change, totals.day_change_pct) }}</td>
+          <td class="text-end">{{ change(totals.ytd_change, totals.ytd_change_pct) }}</td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+{% endblock %}

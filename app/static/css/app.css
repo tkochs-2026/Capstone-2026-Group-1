@@ -1,0 +1,42 @@
+/* on top of Bootstrap. */
+
+.app-logo {
+  display: inline-block;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid #ccc;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Narrow Stocks pages and the order pages */
+.narrow {
+  max-width: 50rem;
+}
+
+.login-card {
+  max-width: 25rem;
+}
+
+.symbol-input {
+  max-width: 22rem;
+}
+
+/* Reinvest? button on Positions: 
+  grey "No" until clicked
+  green "Yes"
+*/
+.btn-check:checked + .reinvest {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+  color: #fff;
+}
+
+.btn-check:checked + .reinvest .reinvest-no, .btn-check:not(:checked) + .reinvest .reinvest-yes {
+  display: none;
+}
+
+/* Administration page scroll */
+.admin-list {
+  max-height: 32rem;
+  overflow-y: auto;
+}

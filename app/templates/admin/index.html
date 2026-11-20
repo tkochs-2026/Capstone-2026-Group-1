@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Administration</h1>
+
+  {% if notice %}
+    <div class="alert alert-warning">
+      <b>{{ notice.title }}</b><br>
+      Temporary password: <code class="fs-5">{{ notice.password }}</code><br>
+      <small>This is the only time it is shown. Give it to the user; they must choose a new password when they log in.</small>
+    </div>
+  {% endif %}
+
+  <div class="row g-4 mb-4">
+    <!-- User Creation -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <h2 class="card-header h5">Add User</h2>
+        <form method="post" action="{{ url_for('admin.add_user') }}" class="card-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="form-label" for="user-name">Full Name</label>
+          <input class="form-control mb-2" id="user-name" name="name" required>
+          <label class="form-label" for="user-ssn">SSN</label>
+          <input class="form-control mb-2" id="user-ssn" name="ssn" placeholder="XXX-XX-XXXX"
+                 pattern="[0-9]{3}-[0-9]{2}-[0-9]{4}" title="XXX-XX-XXXX" required>
+          <label class="form-label" for="user-email">Email</label>
+          <input class="form-control mb-2" type="email" id="user-email" name="email" required>
+          <label class="form-label" for="user-dob">Date of Birth</label>
+          <input class="form-control mb-2" type="date" id="user-dob" name="date_of_birth" required>
+          <label class="form-label" for="user-role">Role</label>
+          <select class="form-select mb-2" id="user-role" name="role">
+            {% for role in roles %}<option>{{ role }}</option>{% endfor %}
+          </select>
+          <label class="form-label" for="user-access">Access Level (administrators only)</label>
+          <input class="form-control mb-2" id="user-access" name="access_level">
+          <label class="form-label" for="user-department">Department (administrators only, optional)</label>
+          <input class="form-control mb-3" id="user-department" name="department">
+          <button class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Stock Creation -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <h2 class="card-header h5">Add Stocks</h2>
+        <form method="post" action="{{ url_for('admin.add_stock') }}" class="card-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="form-label" for="stock-name">Stock Name</label>
+          <input class="form-control mb-2" id="stock-name" name="company_name" required>
+          <label class="form-label" for="stock-symbol">Stock Symbol</label>
+          <input class="form-control mb-2 text-uppercase" id="stock-symbol" name="symbol"
+                 pattern="[A-Za-z0-9]{1,10}" title="1 to 10 letters or digits" required>
+          <label class="form-label" for="stock-price">Stock Price ($)</label>
+          <input class="form-control mb-2" type="number" id="stock-price" name="price" min="0.01" step="0.01" required>
+          <label class="form-label" for="stock-shares">Number of Shares</label>
+          <input class="form-control mb-2" type="number" id="stock-shares" name="shares" min="0.000001" step="any" required>
+          <label class="form-label" for="stock-exchange">Exchange (optional)</label>
+          <input class="form-control mb-2" id="stock-exchange" name="exchange">
+          <label class="form-label" for="stock-description">Stock Description (up to {{ description_max }} characters)</label>
+          <textarea class="form-control mb-2" id="stock-description" name="description" maxlength="{{ description_max }}"></textarea>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="stock-randomize" name="randomize_history" checked>
+            <label class="form-check-label" for="stock-randomize">Randomize History</label>
+          </div>
+          <button class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Market Time Editing -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <h2 class="card-header h5">Market Time</h2>
+        <form method="post" action="{{ url_for('admin.save_schedule') }}" class="card-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <span class="badge {{ 'text-bg-success' if market_open else 'text-bg-danger' }} fs-6">{{ market_state }}</span>
+          <p class="small text-secondary mt-2">
+            Hours: {{ schedule.open_time.strftime("%I:%M %p") }} to {{ schedule.close_time.strftime("%I:%M %p") }}
+            Eastern time, {{ days_text(schedule.trading_days) }}, closed on holidays.
+          </p>
+          <label class="form-label" for="open-time">Open Time</label>
+          <input class="form-control mb-2" type="time" id="open-time" name="open_time"
+                 value="{{ schedule.open_time.strftime('%H:%M') }}" required>
+          <label class="form-label" for="close-time">Close Time</label>
+          <input class="form-control mb-2" type="time" id="close-time" name="close_time"
+                 value="{{ schedule.close_time.strftime('%H:%M') }}" required>
+
+          <p class="form-label mb-1">Trading Days</p>
+          {% for day_name in weekday_names %}
+            <label class="me-2">
+              <input type="checkbox" name="trading_days" value="{{ loop.index0 }}"
+                     {% if loop.index0 in schedule.trading_days %}checked{% endif %}> {{ day_name[:3] }}
+            </label>
+          {% endfor %}
+
+          <p class="form-label mt-3 mb-1">Market Control</p>
+          {% for value, label, colour in override_choices %}
+            <label class="me-2">
+              <input type="radio" name="market_override" value="{{ value }}"
+                     {% if value == schedule.override %}checked{% endif %}> {{ label }}
+            </label>
+          {% endfor %}
+          <p class="small text-secondary">Force open or Force closed ignores the hours, days and holidays until
+            Schedule is chosen again.</p>
+          <button class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Users -->
+  <div class="card mb-4" id="users">
+    <h2 class="card-header h5">Users</h2>
+    <div class="table-responsive admin-list">
+      <table class="table table-sm mb-0">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Date of Birth</th>
+          <th>Role</th>
+          <th class="text-end">Actions</th>
+        </tr>
+        {% for user in users %}
+          {% set is_me = user.user_id == current_user.user_id %}
+          <tr {% if not user.is_active %}class="text-secondary"{% endif %}>
+            <td>
+              {{ user.name }}
+              {% if is_me %}<span class="badge text-bg-secondary">You</span>{% endif %}
+              {% if not user.is_active %}<span class="badge text-bg-secondary">Deactivated</span>{% endif %}
+            </td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.date_of_birth.strftime("%m/%d/%Y") }}</td>
+            <td>{{ user.role }}</td>
+            <td class="text-end text-nowrap">
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#edit-user-{{ user.user_id }}">Edit</button>
+              {% if not is_me and user.is_active %}
+                <form method="post" class="d-inline" action="{{ url_for('admin.issue_temporary_password', user_id=user.user_id) }}"
+                      data-confirm="Give {{ user.name }} a new temporary password? Their current password stops working.">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-secondary">New temp password</button>
+                </form>
+                <form method="post" class="d-inline" action="{{ url_for('admin.deactivate_user', user_id=user.user_id) }}"
+                      data-confirm="Deactivate {{ user.name }}? They won't be able to log in. Their records are kept.">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-danger">Deactivate</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          <tr class="collapse" id="edit-user-{{ user.user_id }}">
+            <td colspan="5" class="bg-light">
+              <form method="post" action="{{ url_for('admin.edit_user', user_id=user.user_id) }}" class="d-flex gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input class="form-control form-control-sm" name="name" value="{{ user.name }}" required>
+                <input class="form-control form-control-sm" type="email" name="email" value="{{ user.email }}" required>
+                <input class="form-control form-control-sm" type="date" name="date_of_birth" value="{{ user.date_of_birth.isoformat() }}" required>
+                <button class="btn btn-sm btn-primary">Save</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- Current Stocks-->
+  <div class="card" id="stocks">
+    <h2 class="card-header h5">Stocks</h2>
+    <div class="table-responsive admin-list">
+      <table class="table table-sm mb-0">
+        <tr>
+          <th>Name</th>
+          <th>Symbol</th>
+          <th class="text-end">Price</th>
+          <th class="text-end">Change %</th>
+          <th class="text-end">Shares available</th>
+          <th class="text-end">Actions</th>
+        </tr>
+        {% for stock in stocks %}
+          <tr {% if not stock.is_listed %}class="text-secondary"{% endif %}>
+            <td>
+              {{ stock.company_name }}
+              {% if not stock.is_listed %}<span class="badge text-bg-secondary">Delisted</span>{% endif %}
+            </td>
+            <td>{{ stock.symbol }}</td>
+            <td class="text-end">{{ stock.current_price | money }}</td>
+            <td class="text-end">{{ "+" if stock.change_pct > 0 else "" }}{{ stock.change_pct }}%</td>
+            <td class="text-end">{{ stock.shares_available | shares }}</td>
+            <td class="text-end text-nowrap">
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#edit-stock-{{ stock.issuer_id }}">Edit</button>
+              {% if stock.is_listed %}
+                <form method="post" class="d-inline" action="{{ url_for('admin.delist_stock', issuer_id=stock.issuer_id) }}"
+                      data-confirm="Delist {{ stock.symbol }}? It can't be found or bought any more. This can't be undone.">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-danger">Delist</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          <tr class="collapse" id="edit-stock-{{ stock.issuer_id }}">
+            <td colspan="6" class="bg-light">
+              <form method="post" action="{{ url_for('admin.edit_stock', issuer_id=stock.issuer_id) }}" class="d-flex gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input class="form-control form-control-sm" name="company_name" value="{{ stock.company_name }}" placeholder="Stock name" required>
+                <input class="form-control form-control-sm" name="description" value="{{ stock.description or '' }}"
+                       placeholder="Description" maxlength="{{ description_max }}">
+                <input class="form-control form-control-sm" name="exchange" value="{{ stock.exchange or '' }}" placeholder="Exchange">
+                <button class="btn btn-sm btn-primary">Save</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No stocks yet. Add one above.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+{% endblock %}
