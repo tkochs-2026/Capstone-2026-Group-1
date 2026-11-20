@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Transaction History</h1>
+
+  <!-- Transaction History Table -->
+  {% if not lines %}
+    <p>No transactions yet.</p>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table">
+        <tr>
+          <th>Date</th>
+          
+          <!-- Admin History Row addition -->
+          {% if is_admin %}<th>Customer</th>{% endif %}
+
+          <th>Account</th>
+          <th>Transaction Type</th>
+          <th>Symbol</th>
+          <th>Description</th>
+          <th class="text-end">Quantity</th>
+          <th class="text-end">Price</th>
+          <th class="text-end">Amount</th>
+          <th>Status</th>
+        </tr>
+        {% for line in lines %}
+          <tr>
+            
+            <!-- Admin History Column addition -->
+            <td class="text-nowrap">{{ line.at.strftime("%m/%d/%Y") }}<br><small>{{ line.at.strftime("%I:%M %p") }}</small></td>
+            {% if is_admin %}<td>{{ line.customer }}</td>{% endif %}
+
+            <td class="text-nowrap">{{ line.account }}</td>
+            <td>{{ line.type }}</td>
+            <td>{{ line.symbol or "" }}</td>
+            <td>{{ line.description }}</td>
+            <td class="text-end">{% if line.quantity is not none %}{{ line.quantity | shares }}{% endif %}</td>
+            <td class="text-end">{% if line.price is not none %}{{ line.price | money }}{% endif %}</td>
+            <td class="text-end text-nowrap">{{ change(line.amount) }}</td>
+            <td>{{ line.status }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}
