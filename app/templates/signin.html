@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+
+<!-- Sign In Menu-->
+{% block content %}
+  <div class="card login-card mx-auto mt-5">
+    <div class="card-body p-4">
+      <h1 class="h4 text-center mb-4">Login</h1>
+      {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+      <form method="post" action="{{ url_for('auth.signin') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control mb-3" type="email" id="email" name="email" value="{{ email }}" required>
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control mb-3" type="password" id="password" name="password" maxlength="72" required>
+        <p class="small text-secondary text-center">New users will need to reset password upon first login.</p>
+        <button class="btn btn-primary w-100">Submit</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
