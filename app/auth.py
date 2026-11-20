@@ -1,0 +1,168 @@
+"""Logging in and out, choosing a new password, and who may open which page.
+
+There is no sign-up page. An administrator creates each user with a temporary password,
+and the user must choose their own password the first time they log in.
+"""
+from functools import wraps
+
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, current_user, login_user, logout_user
+
+from app.models import User, db
+
+bp = Blueprint("auth", __name__)
+bcrypt = Bcrypt()
+
+login_manager = LoginManager()
+
+#Where to send people who aren't logged in
+login_manager.login_view = "auth.signin"
+
+#Don't flash "Please log in" on the login page
+login_manager.login_message = None
+
+#Pages anyone can open without logging in. Every other page needs a login.
+PUBLIC_PAGES = ["auth.signin", "static"]
+
+PASSWORD_MIN_LENGTH = 12
+PASSWORD_MAX_BYTES = 72
+
+
+def password_problem(password):
+    #What is wrong with a new password, or None if it is fine
+    if len(password) < PASSWORD_MIN_LENGTH:
+        return f"Password must be at least {PASSWORD_MIN_LENGTH} characters."
+    if len(password.encode()) > PASSWORD_MAX_BYTES:
+        return f"Password must be at most {PASSWORD_MAX_BYTES} characters."
+    return None
+
+
+# --- Who may open which page -------------------------------------------------------------------------
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Flask-Login calls this on every request to find the logged-in user."""
+    user = db.session.get(User, int(user_id))
+    if user is None or not user.is_active:
+        #A deactivated user is logged out
+        return None
+    return user
+
+
+@bp.before_app_request
+def require_login():
+    #Runs before every page
+    #Sends anyone who isn't logged in to the login page
+    #Anyone still on a temporary password to the "choose a new password" page.
+    
+    page = request.endpoint
+    if page is None or page in PUBLIC_PAGES:
+        #No login needed
+        return None
+
+    if not current_user.is_authenticated:
+        #Go to the login page
+        return login_manager.unauthorized()
+
+    allowed_pages = ["auth.change_password", "auth.logout"]
+    if current_user.must_change_password and page not in allowed_pages:
+        return redirect(url_for("auth.change_password"))
+    return None
+
+
+def admin_required(page_function):
+    #Put @admin_required above a page that only administrators may open.
+    #Users see 403
+    @wraps(page_function)
+    def check_then_show_page(*args, **kwargs):
+        if not current_user.is_admin:
+            abort(403)
+        return page_function(*args, **kwargs)
+    return check_then_show_page
+
+
+def customer_required(page_function):
+    #Put @customer_required above a page that only customers may open.
+    #Admins see 403
+    
+    @wraps(page_function)
+    def check_then_show_page(*args, **kwargs):
+        if current_user.is_admin:
+            abort(403)
+        return page_function(*args, **kwargs)
+    return check_then_show_page
+
+
+def landing_page(user):
+    #Where a user goes after logging in
+    if user.is_admin:
+        return url_for("admin.index")
+    return url_for("account.summary")
+
+
+#Pages
+
+@bp.get("/")
+def home():
+    return redirect(landing_page(current_user))
+
+
+@bp.route("/signin", methods=["GET", "POST"])
+def signin():
+    if current_user.is_authenticated:
+        return redirect(landing_page(current_user))
+
+    email = request.form.get("email", "").strip().lower()
+    error = None
+
+    if request.method == "POST":
+        user = User.query.filter_by(email=email).first()
+        password = request.form.get("password", "")
+        # check_password_hash hashes the typed password and compares it with the stored hash.
+        if user and user.is_active and bcrypt.check_password_hash(user.password_hash, password):
+            session.clear()  # start a fresh session
+            login_user(user)
+            return redirect(landing_page(user))
+
+        # The same message whether the email or the password was wrong,
+        # so nobody can use this page to find out which emails have accounts.
+        error = "Invalid email or password"
+
+    return render_template("auth/signin.html", error=error, email=email)
+
+
+@bp.route("/change-password", methods=["GET", "POST"])
+def change_password():
+    """Where users on a temporary password choose their own."""
+    if not current_user.must_change_password:
+        return redirect(landing_page(current_user))
+
+    errors = {}
+    if request.method == "POST":
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if password_problem(new_password):
+            errors["new_password"] = password_problem(new_password)
+        elif new_password != confirm_password:
+            errors["confirm_password"] = "The two passwords don't match."
+        elif bcrypt.check_password_hash(current_user.password_hash, new_password):
+            errors["new_password"] = "Choose a password different from your temporary one."
+        else:
+            # Store only the hash, never the password itself.
+            current_user.password_hash = bcrypt.generate_password_hash(new_password).decode("utf-8")
+            current_user.must_change_password = False
+            db.session.commit()
+            flash("Your password has been changed.", "success")
+            return redirect(landing_page(current_user))
+
+    return render_template("auth/change_password.html", errors=errors, min_length=PASSWORD_MIN_LENGTH)
+
+
+@bp.post("/logout")
+def logout():
+    session.clear()
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("auth.signin"))
