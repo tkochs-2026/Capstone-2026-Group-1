@@ -58,6 +58,7 @@
                 <tr><td>Change since close</td><td class="text-end">{{ change_text }}</td></tr>
                 <tr><td>Shares owned</td><td class="text-end">{{ quote.shares_owned | shares }}</td></tr>
                 <tr><td>Market value</td><td class="text-end">{{ market_value | money }}</td></tr>
+                <tr><td>Shares Available</td><td class="text-end">{{ quote.stock.shares_available | shares }}</td></tr>
               </table>
             </div>
           {% endif %}

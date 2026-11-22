@@ -31,6 +31,7 @@
         <table class="table table-sm">
           <tr><td>Previous Close</td><td class="text-end">{{ stock.previous_close | money }}</td></tr>
           <tr><td>Open</td><td class="text-end">{{ open_price | money }}</td></tr>
+          <tr><td>Shares Available</td><td class="text-end">{{ stock.shares_available | shares }}</td></tr>
           {% if stock.exchange %}
             <tr><td>Exchange</td><td class="text-end">{{ stock.exchange }}</td></tr>
           {% endif %}

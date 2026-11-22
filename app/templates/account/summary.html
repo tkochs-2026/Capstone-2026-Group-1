@@ -10,7 +10,7 @@
     <div class="card-body">
       <h2 class="h5">Total Value</h2>
       <div class="d-flex flex-wrap gap-4">
-        <div>Total Value<br><b class="fs-5">{{ totals.total_value | money }}</b></div>
+        <div>Total Value<br><b class="fs-5">{{ totals.positions_value | money }}</b></div>
         <div>Day Change<br><b class="fs-5">{{ change(totals.day_change, totals.day_change_pct) }}</b></div>
         <div>Year to date Change<br><b class="fs-5">{{ change(totals.ytd_change, totals.ytd_change_pct) }}</b></div>
       </div>
@@ -76,7 +76,7 @@
             </td>
             <td>{{ row.portfolio.account_type }}</td>
             <td class="text-end">{{ row.totals.cash | money }}</td>
-            <td class="text-end">{{ row.totals.total_value | money }}</td>
+            <td class="text-end">{{ row.totals.positions_value | money }}</td>
             <td class="text-end">{{ change(row.totals.day_change, row.totals.day_change_pct) }}</td>
             <td class="text-end">{{ change(row.totals.ytd_change, row.totals.ytd_change_pct) }}</td>
           </tr>
@@ -86,7 +86,7 @@
         <tr class="fw-bold">
           <td colspan="2">Investments Total</td>
           <td class="text-end">{{ totals.cash | money }}</td>
-          <td class="text-end">{{ totals.total_value | money }}</td>
+          <td class="text-end">{{ totals.positions_value | money }}</td>
           <td class="text-end">{{ change(totals.day_change, totals.day_change_pct) }}</td>
           <td class="text-end">{{ change(totals.ytd_change, totals.ytd_change_pct) }}</td>
         </tr>

@@ -29,11 +29,12 @@
       <div class="card-body">
         <h2 class="h5">Portfolio Value</h2>
         <div class="d-flex flex-wrap gap-4">
-          <div>Total Value<br><b class="fs-5">{{ totals.total_value | money }}</b></div>
+          <div>Total Portfolio Value<br><b class="fs-5">{{ totals.positions_value | money }}</b></div>
           <div>Day Change<br><b class="fs-5">{{ change(totals.day_change, totals.day_change_pct) }}</b></div>
           <div>Year to date Change<br><b class="fs-5">{{ change(totals.ytd_change, totals.ytd_change_pct) }}</b></div>
           <div>Total Cost Basis<br><b class="fs-5">{{ totals.cost_basis | money }}</b></div>
           <div>Total Gain/Loss<br><b class="fs-5">{{ change(totals.gain_loss, totals.gain_loss_pct) }}</b></div>
+          <div>Total Cash<br><b class="fs-5">{{ portfolio.cash_balance | money }}</b></div>
         </div>
       </div>
     </div>
@@ -75,6 +76,7 @@
               <td class="text-end">{{ percent_change(position.price_change_pct) }}</td>
               <td class="text-end">{{ position.cost_basis | money }}</td>
               <td class="text-end">{{ change(position.gain_loss) }}</td>
+              
               <td class="text-center">
                 <input type="checkbox" class="btn-check" id="reinvest-{{ position.issuer_id }}">
                 <label class="btn btn-sm btn-outline-secondary reinvest" for="reinvest-{{ position.issuer_id }}">
@@ -97,16 +99,8 @@
             <td class="text-end">{{ change(equities.gain_loss) }}</td>
             <td></td>
           </tr>
-          <tr class="table-light"><th colspan="11">Cash</th></tr>
-          <tr class="fw-bold">
-            <td colspan="5">Total Cash</td>
-            <td class="text-end">{{ portfolio.cash_balance | money }}</td>
-            <td class="text-end">$0.00</td>
-            <td class="text-end">0%</td>
-            <td class="text-end">N/A</td>
-            <td class="text-end">N/A</td>
-            <td></td>
-          </tr>
+          
+          
         </table>
       </div>
     </div>
